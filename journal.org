@@ -7,3 +7,24 @@ Graff Nicolas
 nicolas.graff@etu.u-paris.fr
 
 Système d’arrosage intellectuel
+
+
+======
+24/11/2022 Pagani:
+discuté semaine dernier avec Degorre
+vous avez approfondi le sujet en mettant au centre la detection et correction
+des erreurs sur le capteur par des modeles d'apprentissage, car ils sont tres fragiles dans ce systeme.
+
+- peut-etre detecter aussi possibilité de fuite robinet...
+
+- mettre sur git sujet finale
+- division travail :
+    - Graff : serveur web et protocoles device controle
+    - Bragina : faire circuit electrique et ecrire driver capteurs/pompes 
+
+- ammeliorer calendrier pour qu'il soit clair les etapes à atteindre chaque mois pour Graff et Bragina.
+
+projet approuvé
+on se voit semaine prochaine pour echage materiel:
+    - DEMANDE D'UN RasberryPI4b si possible 
+    
