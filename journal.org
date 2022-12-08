@@ -28,3 +28,6 @@ projet approuvé
 on se voit semaine prochaine pour echage materiel:
     - DEMANDE D'UN RasberryPI4b si possible 
     
+
+<08/12/2022>
+Donné Raspberrypi 3B et carte SD 32G. Voir plus tard si besoin d'un modèle 4
