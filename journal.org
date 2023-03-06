@@ -31,3 +31,13 @@ on se voit semaine prochaine pour echage materiel:
 
 <08/12/2022>
 Donné Raspberrypi 3B et carte SD 32G. Voir plus tard si besoin d'un modèle 4
+
+<25/01/2022>
+FAIT : 
+- circuit assemblé
+- tests des défférents périphériques
+- début d'interface web, base de données
+À FAIRE : 
+- passage à python
+- étalonner les capteurs d'humidité
+- réfléchir concrètement au modèle d'apprentissage
