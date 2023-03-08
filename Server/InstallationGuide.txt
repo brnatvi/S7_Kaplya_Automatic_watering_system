@@ -1,0 +1,74 @@
+Install MariaDB :
+sudo apt install mariadb-server mariadb-client
+
+To set database server password :
+sudo mysql -u root
+
+After logging into the MySQL prompt, run the following commands one by one:
+use mysql;
+update user set plugin='' where User='root';
+flush privileges;
+\q
+
+mysql_secure_installation
+Press Enter after next lines :
+Enter current password for root (enter for none): # Press ENTER
+Set root password? [Y/n] # Press ENTER
+
+Enter password
+
+Press Enter to accept the default values :
+Remove anonymous users? [Y/n] # Press ENTER
+Disallow root login remotely? [Y/n] # Press ENTER
+Remove test database and access to it? [Y/n] # Press ENTER
+Reload privilege tables now? [Y/n] # Press ENTER
+
+Install Nginx : 
+sudo apt-get install nginx
+
+You can verify installation of Nginx (must be active) :
+sudo systemctl status nginx
+
+Extract archive arrosage to var/www
+
+Create database :
+sudo mysql -u root -p < /path/to/db.sql
+
+Install PHP with PHP-FPM :
+sudo apt-get install php7.4-fpm
+
+You can verify installation of PHP (must be active) :
+sudo systemctl status php7.4-fpm
+
+Create a server block with the correct directives : 
+sudo nano /etc/nginx/sites-available/arrosage
+
+Insert next code :
+server {
+        listen 80;
+        listen [::]:80;
+
+        root /var/www/arrosage;
+        index index.php index.html index.htm index.nginx-debian.html;
+
+        server_name localhost;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+        location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+
+                # Nginx php-fpm sock config:
+                fastcgi_pass unix:/run/php/php-fpm.sock;
+        }
+}
+
+Create a link to the sites-enabled directory : 
+sudo ln -s /etc/nginx/sites-available/arrosage /etc/nginx/sites-enabled/
+
+Test Nginx files :
+sudo nginx -t
+
+Restart nginx :
+sudo systemctl restart nginx
