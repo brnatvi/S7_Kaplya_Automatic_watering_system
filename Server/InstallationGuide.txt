@@ -10,18 +10,29 @@ update user set plugin='' where User='root';
 flush privileges;
 \q
 
+Run next command :
 mysql_secure_installation
 Press Enter after next lines :
 Enter current password for root (enter for none): # Press ENTER
 Set root password? [Y/n] # Press ENTER
 
-Enter password
+Enter password (remember for further installation)
 
 Press Enter to accept the default values :
 Remove anonymous users? [Y/n] # Press ENTER
 Disallow root login remotely? [Y/n] # Press ENTER
 Remove test database and access to it? [Y/n] # Press ENTER
 Reload privilege tables now? [Y/n] # Press ENTER
+
+Save the password to connect to the database from the site:
+sudo nano /var/www/vars.php
+
+
+Insert next code with new database password :
+<?php
+$login = 'admin';
+$password = 'INSERT PASSWORD';
+?>
 
 Install Nginx : 
 sudo apt-get install nginx
@@ -40,6 +51,12 @@ sudo apt-get install php7.4-fpm
 You can verify installation of PHP (must be active) :
 sudo systemctl status php7.4-fpm
 
+To set server password, install :
+sudo apt install apache2-utils
+
+Set server password :
+sudo htpasswd -c /etc/nginx/htpasswd admin
+
 Create a server block with the correct directives : 
 sudo nano /etc/nginx/sites-available/arrosage
 
@@ -54,8 +71,11 @@ server {
         server_name localhost;
 
         location / {
+				auth_basic "Restricted";
+				auth_basic_user_file /etc/nginx/htpasswd;
                 try_files $uri $uri/ =404;
         }
+		
         location ~ \.php$ {
                 include snippets/fastcgi-php.conf;
 

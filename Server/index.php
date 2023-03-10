@@ -10,8 +10,10 @@
 <!-- sql connection -->
 <?php
 
+include '../vars.php';
+
 try {
-    $link = mysqli_connect("localhost", "admin", "admin", "arrosage");
+    $link = mysqli_connect("localhost", $login, $password, "arrosage");
 
     if (!$link) {
         throw new Exception('Failed');
