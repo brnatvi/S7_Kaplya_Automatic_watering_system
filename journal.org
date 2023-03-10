@@ -41,3 +41,17 @@ FAIT :
 - passage à python
 - étalonner les capteurs d'humidité
 - réfléchir concrètement au modèle d'apprentissage
+
+
+<08/03/2023>
+Quelques problèmes d'interérence électromagnétique
+FAIT :
+- mesure des débits de chacun des solénoïdes, y compris ensemble
+- début de modèle pour connaître le débit de chaque solénoïde en fonction du nombre de solénoïdes actifs
+- mesures pour étalonner les capteurs d'humidité
+- début d'interface graphique (web)
+- python
+A FAIRE :
+- se renseigner sur la partie apprentissage : tensorflow n'est probablement pas la solution (pas assez de données)
+- préciser les paramètres d'entrée (température, météo, humidité, type de plante, etc.)
+- créer un jeu de données
