@@ -27,7 +27,6 @@ Reload privilege tables now? [Y/n] # Press ENTER
 Save the password to connect to the database from the site:
 sudo nano /var/www/vars.php
 
-
 Insert next code with new database password :
 <?php
 $login = 'admin';
@@ -50,6 +49,9 @@ sudo apt-get install php7.4-fpm
 
 You can verify installation of PHP (must be active) :
 sudo systemctl status php7.4-fpm
+
+Install mysqli to access SQL from PHP :
+sudo apt install php-mysqli
 
 To set server password, install :
 sudo apt install apache2-utils
