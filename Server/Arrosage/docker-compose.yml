@@ -1,0 +1,35 @@
+version: '3.7'
+
+# Services
+services:
+
+  # Nginx Service
+  nginx:
+    image: nginx:1.21
+    ports:
+      - 80:80
+    volumes:
+      - ./src:/var/www/php
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - php
+
+  # PHP Service
+  php:
+    image: php:8.1-fpm
+    working_dir: /var/www/php
+    volumes:
+      - ./src:/var/www/php
+    depends_on:
+      - mariadb
+    build:
+      dockerfile: Dockerfile
+
+  # MariaDB Service
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./data/db:/var/lib/mysql
