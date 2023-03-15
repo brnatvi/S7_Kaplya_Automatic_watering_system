@@ -24,21 +24,14 @@ Now you should see the docker repository:
 Get:5 https://download.docker.com/linux/ubuntu...
 
 Install docker:
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 
-Verify installation:
-sudo docker run hello-world
+Open your Arrosage directory
 
-Install docker-compose:
-sudo apt install docker-compose
+Build project:
+sudo docker compose build
 
-Add database:
-sudo docker exec -i arrosage-mariadb-1 mysql -u root < src/arrosage.sql
+Start project:
+sudo docker compose up -d
 
-Create user with administrator permissions:
-sudo docker exec -i arrosage-mariadb-1 bash
-mysql -u root -p
-CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin';
-GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost' WITH GRANT OPTION;
-CREATE USER 'admin'@'%' IDENTIFIED BY 'admin';
-GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%' WITH GRANT OPTION;
+Now you can open localhost and use the server
