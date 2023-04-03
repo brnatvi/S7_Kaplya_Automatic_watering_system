@@ -9,14 +9,17 @@
 
 <!-- sql connection -->
 <?php
+
+include '../vars.php';
+
 try {
-    $link = mysqli_connect("mariadb", "admin", "admin", "arrosage");
+    $link = mysqli_connect("localhost", $login, $password, "arrosage");
 
     if (!$link) {
         throw new Exception('Failed');
     }
 } catch (Exception $e) {
-    echo $e;
+    echo 'Wrong database username or password';
     die;
 }
 

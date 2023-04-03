@@ -10,8 +10,10 @@
 <!-- sql connection -->
 <?php
 
+include '../vars.php';
+
 try {
-    $link = mysqli_connect("mariadb", "admin", "admin", "arrosage");
+    $link = mysqli_connect("localhost", $login, $password, "arrosage");
 
     if (!$link) {
         throw new Exception('Failed');
@@ -32,9 +34,11 @@ $result_categories = $link->query($sql_categories);
 
 $sql_pin_sensors = "SELECT * FROM PinSensor";
 $result_pin_sensors = $link->query($sql_pin_sensors);
+$result_pin_sensors2 = $link->query($sql_pin_sensors);
 
 $sql_pin_solenoid = "SELECT * FROM PinSolenoid";
 $result_pin_solenoid = $link->query($sql_pin_solenoid);
+$result_pin_solenoid2 = $link->query($sql_pin_solenoid);
 
 ?>
 
@@ -152,6 +156,36 @@ $result_pin_solenoid = $link->query($sql_pin_solenoid);
         </fieldset>
     </form>
 
+    <form method="post">
+        <fieldset>
+            <legend>Check sensors</legend>
+            Sensor :
+            <select name="pin_sensor">
+                <?php
+                if ($result_pin_sensors2->num_rows > 0) {
+                    while ($row = $result_pin_sensors2->fetch_assoc()) {
+                        echo "<option>" . $row["Number"] . "</option>";
+                    }
+                }
+                ?>
+            </select>
+            <input type="submit" name="testSensor" class="button" value="Test humidity" />
+            <br>
+            Solenoid :
+            <select name="pin_solenoid">
+                <?php
+                if ($result_pin_solenoid2->num_rows > 0) {
+                    while ($row = $result_pin_solenoid2->fetch_assoc()) {
+                        echo "<option>" . $row["Number"] . "</option>";
+                    }
+                }
+                ?>
+            </select>
+            <input type="submit" name="testSolenoid" class="button" value="Test capacity" />
+            <br>
+        </fieldset>
+    </form>
+
     </br>
     <div class="line"></div>
     </br>
@@ -194,11 +228,29 @@ if (array_key_exists('add', $_POST)) {
         sql_query($sql);
         $sql = "DELETE FROM Solenoide WHERE id_solenoid = $id_solenoid";
         sql_query($sql);
-        
+
         //$txt = "Sensor " . $pin_sensor . ", solenoid " . $pin_solenoid . ", plant desconnected" . "\n";
         $txt = "Plant desconnected" . "\n";
         writeLog($txt);
     }
+} else if (array_key_exists('testSensor', $_POST)) {
+    $command = "python3 test.py testSensor " . $_POST['pin_sensor'];
+
+    //only for test
+    $output = exec($command);
+    echo $output;
+
+    //Uncommit after adding a valide python file
+    //header("Refresh: 0");
+} else if (array_key_exists('testSolenoid', $_POST)) {
+    $command = "python3 test.py testSolenoid " . $_POST['pin_solenoid'];
+
+    //only for test
+    $output = exec($command);
+    echo $output;
+
+    //Uncommit after adding a valide python file
+    //header("Refresh: 0");
 }
 
 function sql_query($sql)
@@ -218,7 +270,8 @@ function sql_query($sql)
     return $last_id;
 }
 
-function writeLog($txt){
+function writeLog($txt)
+{
     $current_datetime = date('Y-m-d H:i:s');
     $myfile = fopen("logs.txt", "a") or die("Unable to open file!");
     $txt = $current_datetime . " info " . $txt;
