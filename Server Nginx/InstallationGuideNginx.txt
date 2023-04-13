@@ -1,3 +1,5 @@
+arrosage.zip and arrosage.sql are required for installation
+
 Install MariaDB :
 sudo apt install mariadb-server mariadb-client
 
