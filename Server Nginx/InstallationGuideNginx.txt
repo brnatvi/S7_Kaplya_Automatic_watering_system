@@ -1,3 +1,5 @@
+arrosage.zip and arrosage.sql are required for installation
+
 Install MariaDB :
 sudo apt install mariadb-server mariadb-client
 
@@ -40,7 +42,7 @@ sudo apt-get install nginx
 You can verify installation of Nginx (must be active) :
 sudo systemctl status nginx
 
-Extract archive arrosage to var/www
+Extract archive arrosage to var/www (you should get var/www/arrosage/'files')
 
 Create database :
 sudo mysql -u root -p < /path/to/db.sql
@@ -92,3 +94,5 @@ sudo nginx -t
 
 Restart nginx :
 sudo systemctl restart nginx
+
+Now you can open localhost and use the server
