@@ -1,0 +1,3 @@
+mode=auto
+maxIterations=15
+logFile=Server Nginx/arrosage/logs.txt

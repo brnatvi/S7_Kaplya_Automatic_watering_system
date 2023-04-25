@@ -17,21 +17,16 @@ PIN_SOL1 = 27
 PIN_SOL2 = 22
 PIN_SOL3 = 14
 
+LOG_FILE = 'log.txt'
+
 MODE = "Relais test"    # comment   it to test sensor's data reception
                         # uncomment it to manipulate by relais
 
-def takeSensorPinsFromDB() -> [int]:
-    return []
-
-def takeSolenoidPinsFromDB() -> [int]:
-    return []
-
-def takePumpPinFromDB() -> int:
-    return 0
-
+      
+# Errors logging to file
 def errorLogging(file_name: str, log_level: str, log_str: str):
     path_dir = os.path.abspath(os.path.join('..'))
-    path_dir = os.path.join(path_dir, 'Logs')
+    path_dir = os.path.join(path_dir, 'Server Nginx', 'arrosage')
     if (not os.path.exists(path_dir)):
         os.mkdir(path_dir)
     path = os.path.join(path_dir, file_name)
@@ -42,12 +37,10 @@ def errorLogging(file_name: str, log_level: str, log_str: str):
         time_stamp = current_time.timestamp()            
         date_time = datetime.fromtimestamp(time_stamp)
         
-       # str_date = date_time.strftime("%d-%m-%Y)
-        str_date_time = date_time.strftime("%d-%m-%Y; %H:%M:%S")
+        str_date_time = date_time.strftime("%Y-%m-%d %H:%M:%S") 
         
-
-        
-        file.write(str_date_time + '; ' + log_level + '; ' + log_str + '\n')
+        file.write(str_date_time + ' ' + log_level + ' ' + log_str + '\n')
+        file.close()
     
 
 # Tests sensors or solenoids + pump
@@ -122,25 +115,24 @@ def wateringAll(list_pins: [int], duration: int) -> ():
         for el in sol_list:        
             el.on()
     except Exception as error:
-        print("TODO log errors : exception", error)
+        errorLogging(LOG_FILE, 'debug', error)
         
     
 # Take data from each of MCP's pins specified
-def takeDataFromAllSensors(buffer) -> [int]:
+def takeDataFromAllSensors(buffer, pots) -> [int]:
     try:
-        for i in range(0, MCP_pins_count):    
-            pot = MCP3008(i)                
-            buffer.append(pot.raw_value)
+        for i in range(0, MCP_pins_count):
+            buffer.append(pots[i].raw_value)
         return buffer
     except Exception as error:
-        print("TODO log errors : exception", error)
+        errorLogging(LOG_FILE, 'debug', error)
 
 # Take data from MCP pin specified
 def takeDataFromSensor(pin: int) -> int:
     try:
         return MCP3008(pin).raw_value
     except Exception as error:
-        print("TODO log errors : exception", error)
+        errorLogging(LOG_FILE, 'debug', error)
     return -1
 
 
@@ -164,9 +156,13 @@ def testAllSensors(nb_iterations: int, period: int, file_name) -> ():
         
         buffer = []
         count = nb_iterations
+        pots = list()
+        for i in range(0, MCP_pins_count):    
+            pots.append(MCP3008(i))
+            
         while (count > 0):
             
-            takeDataFromAllSensors(buffer)                    
+            takeDataFromAllSensors(buffer, pots)                    
             print(buffer)                  
             writer.writerow(buffer)
             buffer.clear()
@@ -211,7 +207,7 @@ def calibration(list_pins: [int], list_sprinkl_durations: [float], repeat: int, 
                 time.sleep(between_take_data)
                 count-=1
             except Exception as error:
-                print("TODO log errors : exception", error)
+                errorLogging(LOG_FILE, 'debug', error)
                 time.sleep(repeat_if_error)
         writer.writerow(buffer)         # insert space
                 
@@ -230,7 +226,7 @@ def calibration(list_pins: [int], list_sprinkl_durations: [float], repeat: int, 
                     time.sleep(duration)
                     times-=1
                 except Exception as error:
-                    print("TODO log errors : exception", error)
+                    errorLogging(LOG_FILE, 'debug', 'solenoids failure: ' + error)
                     time.sleep(repeat_if_error)
                 
             # wait to absorption accomplished            
@@ -247,7 +243,7 @@ def calibration(list_pins: [int], list_sprinkl_durations: [float], repeat: int, 
                     time.sleep(between_take_data)
                     count-=1
                 except Exception as error:
-                    print("TODO log errors : exception", error)
+                    errorLogging(LOG_FILE, 'debug', 'sensors failure: ' + error)
                     time.sleep(repeat_if_error)
                     
             writer.writerow(buffer)         # insert space        
@@ -263,7 +259,9 @@ if __name__ == '__main__':
    # calibration(list_pins, [3.4, 2,3], 5, "test_file.csv")
    # buf = list()
    # print (takeDataFromAllSensors(buf))
-    testAllSensors(10, 5, "sensors_test_dry_soil.csv")
+    testAllSensors(10, 5, "sensors_test_moist_soil.csv")
+
+     
 
     
    # wateringOne(PIN_SOL0, 7)
