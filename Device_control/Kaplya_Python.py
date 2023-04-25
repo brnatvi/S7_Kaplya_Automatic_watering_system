@@ -10,8 +10,6 @@ import os
 
 
 # constants
-PERIOD_1 = 10
-PERIOD_2 = 20
 MCP_pins_count = 4
 PIN_PUMP = 24
 PIN_SOL0 = 17
@@ -21,6 +19,36 @@ PIN_SOL3 = 14
 
 MODE = "Relais test"    # comment   it to test sensor's data reception
                         # uncomment it to manipulate by relais
+
+def takeSensorPinsFromDB() -> [int]:
+    return []
+
+def takeSolenoidPinsFromDB() -> [int]:
+    return []
+
+def takePumpPinFromDB() -> int:
+    return 0
+
+def errorLogging(file_name: str, log_level: str, log_str: str):
+    path_dir = os.path.abspath(os.path.join('..'))
+    path_dir = os.path.join(path_dir, 'Logs')
+    if (not os.path.exists(path_dir)):
+        os.mkdir(path_dir)
+    path = os.path.join(path_dir, file_name)
+    
+    with open(path, mode='a') as file:
+        
+        current_time = datetime.now()
+        time_stamp = current_time.timestamp()            
+        date_time = datetime.fromtimestamp(time_stamp)
+        
+       # str_date = date_time.strftime("%d-%m-%Y)
+        str_date_time = date_time.strftime("%d-%m-%Y; %H:%M:%S")
+        
+
+        
+        file.write(str_date_time + '; ' + log_level + '; ' + log_str + '\n')
+    
 
 # Tests sensors or solenoids + pump
 def firstTests():
@@ -32,18 +60,18 @@ def firstTests():
 
         for i in list_pins:
             sol_list.append(LED(i))
+            
+        for el in sol_list:        
+            el.on() 
         
         while True:
             for el in sol_list:        
-                el.on()
-
-            for el in sol_list:        
                 el.off()
-            time.sleep(PERIOD_1)
-
+            time.sleep(1)
+            
             for el in sol_list:        
                 el.on()
-            time.sleep(PERIOD_1)
+            time.sleep(7)
 
     
     else:        # take data from MCP3008
@@ -57,15 +85,72 @@ def firstTests():
             print("")
             time.sleep(PERIOD_1)
 
+# Watering one pot.
+# WARNING: it is not an error that the "on" function is first called to stop the current supply (in case it is supplied)
+#        - this is not a mistake!
+# The wiring diagram of the relay in our system is such that "on" works like "off" and vice versa
+def wateringOne(relay_pin: int, duration: int) -> ():
+    led = LED(relay_pin)
+    pump = LED(PIN_PUMP)
+    pump.on()    
+    led.on()
+    pump.off()
+    led.off()
+    time.sleep(duration)
+    pump.on()
+    led.on()
+
+# Watering all pots.
+# WARNING: it is not an error that the "on" function is first called to stop the current supply (in case it is supplied)
+#        - this is not a mistake!
+# The wiring diagram of the relay in our system is such that "on" works like "off" and vice versa
+def wateringAll(list_pins: [int], duration: int) -> ():
+    try:
+        sol_list = []
+
+        for i in list_pins:
+            sol_list.append(LED(i))        
+
+        for el in sol_list:        
+            el.on()
+
+        for el in sol_list:        
+            el.off()
+        
+        time.sleep(duration)
+
+        for el in sol_list:        
+            el.on()
+    except Exception as error:
+        print("TODO log errors : exception", error)
+        
+    
+# Take data from each of MCP's pins specified
+def takeDataFromAllSensors(buffer) -> [int]:
+    try:
+        for i in range(0, MCP_pins_count):    
+            pot = MCP3008(i)                
+            buffer.append(pot.raw_value)
+        return buffer
+    except Exception as error:
+        print("TODO log errors : exception", error)
+
+# Take data from MCP pin specified
+def takeDataFromSensor(pin: int) -> int:
+    try:
+        return MCP3008(pin).raw_value
+    except Exception as error:
+        print("TODO log errors : exception", error)
+    return -1
 
 
-# Writes raw data from sensors to the .csv file 10 times with a pause of PERIOD_1 seconds
-def testSensors():
+# Writes raw data from sensors to the .csv file (file_name) 'nb_iterations' times with a pause of 'period' seconds
+def testAllSensors(nb_iterations: int, period: int, file_name) -> ():
     path_dir = os.path.abspath(os.path.join('..'))
     path_dir = os.path.join(path_dir, 'Tests')
     if (not os.path.exists(path_dir)):
         os.mkdir(path_dir)
-    path = os.path.join(path_dir, 'sensors_calibration.csv') 
+    path = os.path.join(path_dir, file_name) 
  
     with open(path, mode='a') as csvfile:
             
@@ -75,208 +160,114 @@ def testSensors():
         time_stamp = current_time.timestamp()            
         date_time = datetime.fromtimestamp(time_stamp)
         str_date_time = date_time.strftime("%d-%m-%Y, %H:%M:%S")
-
         writer.writerow([str_date_time])
+        
         buffer = []
-        count = 10
+        count = nb_iterations
         while (count > 0):
-            for i in range(0, MCP_pins_count):        
-                pot = MCP3008(i)                    
-                buffer.append(pot.raw_value)
-                    
+            
+            takeDataFromAllSensors(buffer)                    
             print(buffer)                  
             writer.writerow(buffer)
             buffer.clear()
             count -= 1
-            time.sleep(PERIOD_1)
+            time.sleep(period)
             
         writer.writerow(buffer)
         csvfile.close()
-        
-def sprinkling(list_pins, duration):
-    sol_list = []
 
-    for i in list_pins:
-        sol_list.append(LED(i))        
-
-    for el in sol_list:        
-        el.on()
-
-    for el in sol_list:        
-        el.off()
-        
-    time.sleep(duration)
-
-    for el in sol_list:        
-        el.on()
-        
-    
-# Check the data from each of MCP's pins 
-def takeDataFromSensors(buffer):
-    for i in range(0, MCP_pins_count):    
-        pot = MCP3008(i)                
-        buffer.append(pot.raw_value)           
-    return buffer
 
     
-# Writes raw data from sensors to the .csv file accordin the plan from 'calculation.xlsx' file 'calibration'
-def calibration(list_pins):
+# Writes raw data from sensors to the .csv file ('name_file')
+# - sprinkling: execute sprinkling program according 'list_sprinkl_durations'
+# - reading tha row data: reads row data 'repeat' times from sensors
+# - save file in folder 'Tests' on root project
+def calibration(list_pins: [int], list_sprinkl_durations: [float], repeat: int, name_file: str) -> ():
+    
+    absorption_duration = 5*60
+    between_take_data = 5
+    repeat_if_error = 1*60
+    
     path_dir = os.path.abspath(os.path.join('..'))
     path_dir = os.path.join(path_dir, 'Tests')
     if (not os.path.exists(path_dir)):
         os.mkdir(path_dir)
-    path = os.path.join(path_dir, 'persentage_calibration.csv')
+    path = os.path.join(path_dir, name_file)
     
-
- 
     with open(path, mode='a') as csvfile:
             
         writer = csv.writer(csvfile, delimiter = ",", lineterminator="\r")
-
-        writer.writerow(["==== PERSENTAGE CALIBRATION ======"])
-        
-        current_time = datetime.now()
-        time_stamp = current_time.timestamp()            
-        date_time = datetime.fromtimestamp(time_stamp)
-        str_date_time = date_time.strftime("%d-%m-%Y, %H:%M:%S") 
-
-        writer.writerow([str_date_time])        
-        
         buffer = []
         
-        # 0% : take data
-    #    for i in range(10):
-   #         takeDataFromSensors(buffer)
-    #        print(buffer)                  
-    #        writer.writerow(buffer)
-    #        buffer.clear()
-    #        time.sleep(5)
-        
-        # 10% :   3,5s + 10min wait + take data
-     #   qwant = 3.5/3
-     #   for i in range(3):
-     #       sprinkling(list_pins, qwant)
-     #       time.sleep(60)
-            
-     #   time.sleep(10*60)
-        
-     #   for i in range(10):
-     #       takeDataFromSensors(buffer)
-     #       print(buffer)                  
-     #       writer.writerow(buffer)
-     #       buffer.clear()
-     #       time.sleep(5)
-            
-        # 30% :   6,9s + 10min wait + take data
-     #   qwant = 6.9/6
-     #   for i in range(6):
-     #       sprinkling(list_pins, qwant)
-     #       time.sleep(60)
-            
-     #   time.sleep(10*60)
-        
-     #   for i in range(10):
-      #      takeDataFromSensors(buffer)
-     #       print(buffer)                  
-     #       writer.writerow(buffer)
-     #       buffer.clear()
-     #       time.sleep(5)
-     #   print(" 50%")
-        
-        # 50% :   6,9s + 10min wait + take data
-     #   qwant = 6.9/6
-     #   count = 6
-     #   while(count > 0):
-     #       try:
-     #           sprinkling(list_pins, qwant)
-     #           time.sleep(60)
-     #           count-=1
-     #       except SPISoftwareFallback, GPIOPinInUse:
-     #           print("exception")
-     #           time.sleep(60)
-            
-     #   time.sleep(5*60)
-        
-     #   count = 10
-     #   while(count > 0):
-     #       try:
-     #           takeDataFromSensors(buffer)
-     #           print(buffer)                  
-      #          writer.writerow(buffer)
-      #          buffer.clear()
-      #          time.sleep(5)
-     #           count-=1
-     #       except SPISoftwareFallback, GPIOPinInUse:
-     #           print("exception")
-     #           time.sleep(60)
-     #   print(" ")
-        
-        # 70% :   6,9s + 10min wait + take data
-     #   qwant = 6.9/6
-     #   count = 6
-     #   while(count > 0):
-     #       try:
-     #           sprinkling(list_pins, qwant)
-     #           time.sleep(60)
-     #           count-=1
-     #       except SPISoftwareFallback, GPIOPinInUse:
-     #           print("exception")
-     #           time.sleep(60)
-            
-     #   time.sleep(5*60)
-        
-        count = 4
-        while(count > 0):
+        # 0% : take initial data
+        count = repeat
+        while (count > 0):
             try:
-                takeDataFromSensors(buffer)
-                print(buffer)                  
+                takeDataFromAllSensors(buffer)
                 writer.writerow(buffer)
+                print(buffer)
                 buffer.clear()
-                time.sleep(5)
-                count-=1
-            except (SPISoftwareFallback, GPIOPinInUse) as error:
-                print(error)
-                time.sleep(60)
-        print(" ")
-        
-        # 100% : 10,4s + 10min wait + take data
-        qwant = 10.4/10
-        count = 10
-        while(count > 0):
-            try:
-                sprinkling(list_pins, qwant)
-                time.sleep(60)
-                count-=1
-            except (SPISoftwareFallback, GPIOPinInUse) as error:
-                print(error)
-                time.sleep(60)                
-            
-        time.sleep(5*60)
-        
-        count = 10
-        while(count > 0):
-            try:
-                takeDataFromSensors(buffer)
-                print(buffer)                  
-                writer.writerow(buffer)
-                buffer.clear()
-                time.sleep(5)
-                count-=1
-            except (SPISoftwareFallback, GPIOPinInUse) as error:
-                print(error)
-                time.sleep(60)
                 
+                time.sleep(between_take_data)
+                count-=1
+            except Exception as error:
+                print("TODO log errors : exception", error)
+                time.sleep(repeat_if_error)
+        writer.writerow(buffer)         # insert space
+                
+        print("0% made")            
+        # apply the plan of sprinkling and taking the row data
+        for duration in list_sprinkl_durations:
+            
+            # sprinkling
+            quantum = duration/int(duration)       # sprinkling will be made by quantum of 1,.. seconds
+            
+            times = int(duration)
+            
+            while (times > 0):
+                try:
+                    wateringAll(list_pins, quantum)
+                    time.sleep(duration)
+                    times-=1
+                except Exception as error:
+                    print("TODO log errors : exception", error)
+                    time.sleep(repeat_if_error)
+                
+            # wait to absorption accomplished            
+            time.sleep(absorption_duration)
+            
+            # take data from sensors
+            count = repeat
+            while (count > 0):
+                try:
+                    takeDataFromAllSensors(buffer)
+                    writer.writerow(buffer)
+                    print(buffer)
+                    buffer.clear()                    
+                    time.sleep(between_take_data)
+                    count-=1
+                except Exception as error:
+                    print("TODO log errors : exception", error)
+                    time.sleep(repeat_if_error)
+                    
+            writer.writerow(buffer)         # insert space        
+            print(str(duration) + " made")
+            
         csvfile.close()
         
 
 if __name__ == '__main__':  
     
-    #list_pins = [PIN_SOL0, PIN_SOL1, PIN_SOL2, PIN_SOL3, PIN_PUMP]
+  #  list_pins = [PIN_SOL0, PIN_SOL1, PIN_SOL2, PIN_SOL3, PIN_PUMP]
+
+   # calibration(list_pins, [3.4, 2,3], 5, "test_file.csv")
+   # buf = list()
+   # print (takeDataFromAllSensors(buf))
+    testAllSensors(10, 5, "sensors_test_dry_soil.csv")
+
     
-   # calibration(list_pins)
-   firstTests()
-
-
-
+   # wateringOne(PIN_SOL0, 7)
+  #  time.sleep(4)
+  #  wateringAll(list_pins, 7)
 
 
