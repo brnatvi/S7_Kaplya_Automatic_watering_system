@@ -24,6 +24,15 @@ CREATE TABLE `Categories` (
   `upper_limit` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `Categories`
+--
+
+INSERT INTO `Categories` (`id_category`, `lower_limit`, `upper_limit`) VALUES
+(1, 30, 50);
+(2, 40, 70);
+(3, 50, 90);
+
 -- --------------------------------------------------------
 
 --
@@ -49,6 +58,20 @@ CREATE TABLE `PinSensor` (
   `Number` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `PinSensor`
+--
+
+INSERT INTO `PinSensor` (`Number`) VALUES
+(0),
+(1),
+(2),
+(3),
+(4),
+(5),
+(6),
+(7);
+
 -- --------------------------------------------------------
 
 --
@@ -58,6 +81,20 @@ CREATE TABLE `PinSensor` (
 CREATE TABLE `PinSolenoid` (
   `Number` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `PinSolenoid`
+--
+
+INSERT INTO `PinSolenoid` (`Number`) VALUES
+(14),
+(15),
+(17),
+(18),
+(22),
+(23),
+(24),
+(27);
 
 -- --------------------------------------------------------
 
