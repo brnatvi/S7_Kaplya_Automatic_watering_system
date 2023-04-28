@@ -6,6 +6,7 @@ from time import sleep
 from datetime import datetime
 import csv
 import os
+import mariadb
 
 
 class Sensor:
@@ -44,12 +45,12 @@ class Plant:
     name: str
     category: int
     
-    def __init__(id, name, category):
+    def __init__(self, id, name, category):
         self.id = id
         self.name = name
         self.category = category
         
-    def __str__():
+    def __str__(self):
         return 'plant ' + self.name
     
 
@@ -86,7 +87,24 @@ def errorLogging(file_name: str, log_level: str, log_str: str):
         file.write(str_date_time + ' ' + log_level + ' ' + log_str + '\n')
         file.close()
 
+def databaseConn():
+    try:
+        conn = mariadb.connect(
+            #replace file!
+            user="admin",
+            password="admin",
+            host="localhost",
+            database="arrosage"
+        )
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
+    return conn
     
+
+def fillPlant(cur):
+    cur.execute("SELECT * FROM Plant ")
+    for (id_plant, name, id_category) in cur:
+        print(Plant(id_plant, name, id_category))
     
 if __name__ == '__main__':
     
@@ -114,8 +132,7 @@ if __name__ == '__main__':
         errorLogging(log_file, 'fatal', 'Problem with config')
 
     #2) connect to DB
+    cur = databaseConn().cursor()
     
     #3) data from DB -> fill classes
-    
-    
-    
+    fillPlant(cur)
