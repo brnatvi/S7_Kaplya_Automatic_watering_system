@@ -16,14 +16,14 @@ class Sensor:
     min_val: int
     isWorking: bool
     
-    def __init__(id, pin, min, max, isWorking):
+    def __init__(self, id, pin, min, max, isWorking):
         self.id = id
         self.pin = pin
         self.min = min
         self.max = max
         self.isWorking = isWorking
         
-    def __str__():
+    def __str__(self):
         return 'sens' + str(self.id)
     
 
@@ -32,12 +32,12 @@ class Solenoid:
     pin: int
     debit: int
     
-    def __init__(id, pin, debit):
+    def __init__(self, id, pin, debit):
         self.id = id
         self.pin = pin
         self.debit = debit
         
-    def __str__():
+    def __str__(self):
         return 'sol' + str(self.id)   
     
 class Plant:
@@ -62,7 +62,7 @@ class Pot:
     mode: str
     isIrrigated: bool
     
-    def __init__(id: int, sens: Sensor, sol: Solenoid, pl: Plant, mode: str, isIrrigated: bool):
+    def __init__(self, id: int, sens: Sensor, sol: Solenoid, pl: Plant, mode: str, isIrrigated: bool):
         self.id = id
         self.sensor = sens
         self.sol = sol
@@ -70,7 +70,7 @@ class Pot:
         self.mode = mode
         self.isIrrigated = isIrrigated
         
-    def __str__():
+    def __str__(self):
         return 'pot' + str(self.id)
 
 
@@ -100,11 +100,25 @@ def databaseConn():
         print(f"Error connecting to MariaDB Platform: {e}")
     return conn
     
+def fillSensor(cur):
+    cur.execute("SELECT * FROM Sensor")
+    for (id_sensor,	pin_sensor,	max_humidity, min_humidity) in cur:
+        print(Sensor(id_sensor, pin_sensor, min_humidity, max_humidity, True))
+
+def fillSolenoid(cur):
+    cur.execute("SELECT * FROM Solenoide")
+    for (id_solenoid, pin_solenoid, capacity) in cur:
+        print(Solenoid(id_solenoid, pin_solenoid, capacity))
 
 def fillPlant(cur):
-    cur.execute("SELECT * FROM Plant ")
+    cur.execute("SELECT * FROM Plant")
     for (id_plant, name, id_category) in cur:
         print(Plant(id_plant, name, id_category))
+
+def fillPot(cur):
+    cur.execute("SELECT * FROM Flowerpot")
+    for (id_flowerpot, id_plant, id_sensor, id_solenoid, mode, is_irrigated ) in cur:
+        print(Pot(id_flowerpot, id_sensor, id_solenoid, id_plant, mode, is_irrigated))
     
 if __name__ == '__main__':
     
@@ -135,4 +149,7 @@ if __name__ == '__main__':
     cur = databaseConn().cursor()
     
     #3) data from DB -> fill classes
+    fillSensor(cur)
+    fillSolenoid(cur)
     fillPlant(cur)
+    fillPot(cur)
