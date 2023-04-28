@@ -1,20 +1,23 @@
+# Module Imports
+import mariadb
 import sys
-print("test")
-import mysql.connector
-
-print("test")
 
 try:
-    conn = mysql.connector.connect(
+    conn = mariadb.connect(
         user="admin",
-        password="angel200399",
+        password="admin",
         host="localhost",
-        port=3306,
         database="arrosage"
     )
-except mysql.Error as e:
+except mariadb.Error as e:
     print(f"Error connecting to MariaDB Platform: {e}")
     sys.exit(1)
 
-for param in sys.argv:
-    print (param)
+# Get Cursor
+cur = conn.cursor()
+cur.execute(
+    "SELECT name, id_flowerpot " +
+    "FROM Plant JOIN Flowerpot on Plant.id_plant=Flowerpot.id_plant")
+
+for (name, id_flowerpot) in cur:
+    print(f"Name: {name}, id_flowerpot: {id_flowerpot}")

@@ -1,9 +1,11 @@
-arrosage.zip and arrosage.sql are required for installation
+! arrosage.zip and arrosage.sql are required for installation
+! In the guide, nano is used to edit files
+
 
 Install MariaDB :
 sudo apt install mariadb-server mariadb-client
 
-To set database server password :
+To set database server password : (remember root password)
 sudo mysql -u root
 
 After logging into the MySQL prompt, run the following commands one by one:
@@ -18,7 +20,7 @@ Press Enter after next lines :
 Enter current password for root (enter for none): # Press ENTER
 Set root password? [Y/n] # Press ENTER
 
-Enter password (remember for further installation)
+Enter password
 
 Press Enter to accept the default values :
 Remove anonymous users? [Y/n] # Press ENTER
@@ -26,9 +28,13 @@ Disallow root login remotely? [Y/n] # Press ENTER
 Remove test database and access to it? [Y/n] # Press ENTER
 Reload privilege tables now? [Y/n] # Press ENTER
 
+Create a database user : (remember username and password for further installation)
+sudo mysql -u root -p
+CREATE USER 'username'@localhost IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON . TO 'username'@localhost IDENTIFIED BY 'password';
+
 Save the password to connect to the database from the site:
 sudo nano /var/www/vars.php
-
 
 Insert next code with new database password :
 <?php
@@ -42,12 +48,15 @@ sudo apt-get install nginx
 You can verify installation of Nginx (must be active) :
 sudo systemctl status nginx
 
+Intall MySQLi extension for php
+sudo apt-get install php-mysqli
+
 Extract archive arrosage to var/www (you should get var/www/arrosage/'files')
 
-Create database :
+Create database : (using root password; be attentive to the spaces in the path)
 sudo mysql -u root -p < /path/to/db.sql
 
-Install PHP with PHP-FPM :
+Install PHP with PHP-FPM : (For debian users, read (1) )
 sudo apt-get install php7.4-fpm
 
 You can verify installation of PHP (must be active) :
@@ -96,3 +105,26 @@ Restart nginx :
 sudo systemctl restart nginx
 
 Now you can open localhost and use the server
+
+
+
+
+
+
+
+
+
+(1)
+PHP 7.4 installation on Debian :
+
+Download and store PPA repository :
+sudo apt -y install lsb-release apt-transport-https ca-certificates
+sudo wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+
+Add repository :
+echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list
+
+Update system package list :
+sudo apt update
+
+sudo apt-get install php7.4-fpm
