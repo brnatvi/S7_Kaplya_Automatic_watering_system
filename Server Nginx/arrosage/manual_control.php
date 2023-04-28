@@ -26,7 +26,10 @@ try {
 $sql_pants = "SELECT name, id_flowerpot FROM Plant JOIN Flowerpot on Plant.id_plant=Flowerpot.id_plant";
 $result_plants = $link->query($sql_pants);
 
-$sql_pants = "SELECT name, id_flowerpot, id_sensor, id_solenoid, mode, id_category, is_irrigated FROM Plant JOIN Flowerpot on Plant.id_plant=Flowerpot.id_plant";
+$sql_pants = "SELECT name, id_flowerpot, pin_sensor, pin_solenoid, mode, id_category, is_irrigated 
+    FROM Plant JOIN Flowerpot on Plant.id_plant=Flowerpot.id_plant
+                JOIN Solenoide on Flowerpot.id_solenoid=Solenoide.id_solenoid
+                JOIN Sensor on Flowerpot.id_sensor=Sensor.id_sensor";
 $result_plants2 = $link->query($sql_pants);
 
 ?>
@@ -63,8 +66,8 @@ $result_plants2 = $link->query($sql_pants);
                 echo "<tr>";
                 echo "<th>" . $row["name"] . "</th>";
                 echo "<th>" . $row["id_flowerpot"] . "</th>";
-                echo "<th>" . $row["id_sensor"] . "</th>";
-                echo "<th>" . $row["id_solenoid"] . "</th>";
+                echo "<th>" . $row["pin_sensor"] . "</th>";
+                echo "<th>" . $row["pin_solenoid"] . "</th>";
                 echo "<th>" . $row["mode"] . "</th>";
                 echo "<th>" . $row["id_category"] . "</th>";
                 echo "<th>" . $row["is_irrigated"] . "</th>";
