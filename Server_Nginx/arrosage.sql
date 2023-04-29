@@ -29,8 +29,8 @@ CREATE TABLE `Categories` (
 --
 
 INSERT INTO `Categories` (`id_category`, `lower_limit`, `upper_limit`) VALUES
-(1, 30, 50);
-(2, 40, 70);
+(1, 30, 50),
+(2, 40, 70),
 (3, 50, 90);
 
 -- --------------------------------------------------------
@@ -87,14 +87,10 @@ CREATE TABLE `PinSolenoid` (
 --
 
 INSERT INTO `PinSolenoid` (`Number`) VALUES
-(14),
-(15),
 (17),
-(18),
+(27),
 (22),
-(23),
-(24),
-(27);
+(14);
 
 -- --------------------------------------------------------
 

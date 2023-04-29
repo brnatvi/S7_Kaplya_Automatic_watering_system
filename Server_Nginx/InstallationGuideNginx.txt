@@ -52,6 +52,7 @@ Intall MySQLi extension for php
 sudo apt-get install php-mysqli
 
 Extract archive arrosage to var/www (you should get var/www/arrosage/'files')
+sudo unzip Server_Nginx/arrosage.zip -d var/www/
 
 Create database : (using root password; be attentive to the spaces in the path)
 sudo mysql -u root -p < /path/to/db.sql
