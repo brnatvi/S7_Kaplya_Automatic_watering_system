@@ -29,8 +29,8 @@ CREATE TABLE `Categories` (
 --
 
 INSERT INTO `Categories` (`id_category`, `lower_limit`, `upper_limit`) VALUES
-(1, 30, 50);
-(2, 40, 70);
+(1, 30, 50),
+(2, 40, 70),
 (3, 50, 90);
 
 -- --------------------------------------------------------

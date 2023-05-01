@@ -254,18 +254,20 @@ def calibration(list_pins: [int], list_sprinkl_durations: [float], repeat: int, 
 
 if __name__ == '__main__':  
     
-  #  list_pins = [PIN_SOL0, PIN_SOL1, PIN_SOL2, PIN_SOL3, PIN_PUMP]
+    list_pins = [PIN_SOL0, PIN_SOL1, PIN_SOL2, PIN_SOL3, PIN_PUMP]
 
    # calibration(list_pins, [3.4, 2,3], 5, "test_file.csv")
    # buf = list()
    # print (takeDataFromAllSensors(buf))
-    testAllSensors(10, 5, "sensors_test_moist_soil.csv")
+   # testAllSensors(10, 5, "sensors_test_moist_soil.csv")
 
      
 
     
    # wateringOne(PIN_SOL0, 7)
-  #  time.sleep(4)
-  #  wateringAll(list_pins, 7)
+    time.sleep(4)
+   # wateringAll(list_pins, 7)
+   
+    wateringOne(PIN_SOL3, 2)
 
 
