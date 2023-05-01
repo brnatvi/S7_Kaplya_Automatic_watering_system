@@ -235,9 +235,8 @@ def autoMode():
                     auto_mode = 0
             if (p[0] == 'maxIterations'):
                 max_iter = int(p[1])
-            if (p[0] == 'logFile'):
-                path_dir = os.path.abspath(os.path.join('..'))
-                log_file = os.path.join(path_dir, p[1])
+            if (p[0] == 'logFile'):                
+                log_file = p[1]
         config.close()
         
                 
