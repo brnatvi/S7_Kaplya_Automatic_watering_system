@@ -142,6 +142,12 @@ $result_pin_solenoid2 = $link->query($sql_pin_solenoid);
             Capacity
             <input type="text" size=4 name="capacity" required="required" />
             <br>
+            Pot volume in liters : 
+            <input type="text" size=4 name="volume" required="required" />
+            <br>
+            Pot diameter : 
+            <input type="text" size=4 name="diameter" required="required" />
+            <br>
             <input type="submit" name="add" class="button" value="Add" />
         </fieldset>
     </form>
@@ -209,13 +215,16 @@ if (array_key_exists('add', $_POST)) {
     $max_humidity = "\"" . $_POST['max_humidity'] . "\"";
     $pin_solenoid = "\"" . $_POST['pin_solenoid'] . "\"";
     $capacity = "\"" . $_POST['capacity'] . "\"";
+    $volume = "\"" . floatval($_POST['volume'])*1000 . "\"";
+    $diameter = floatval($_POST['diameter']);
+    $area = "\"" . (1 / 4 * M_PI * $diameter * $diameter) . "\"";
     $sql = "INSERT INTO Sensor (pin_sensor, min_humidity, max_humidity) VALUES ($pin_sensor, $min_humidity,$max_humidity)";
     $id_sensor = sql_query($sql);
     $sql = "INSERT INTO Solenoide (pin_solenoid, capacity) VALUES ($pin_solenoid, $capacity)";
     $id_solenoid = sql_query($sql);
     $sql = "INSERT INTO Plant (name, id_category) VALUES ($name, $id_category)";
     $id_plant = sql_query($sql);
-    $sql = "INSERT INTO Flowerpot (id_plant, id_sensor, id_solenoid) VALUES ($id_plant, $id_sensor, $id_solenoid)";
+    $sql = "INSERT INTO Flowerpot (id_plant, id_sensor, id_solenoid, volume, area) VALUES ($id_plant, $id_sensor, $id_solenoid, $volume, $area)";
     sql_query($sql);
 
     $txt = "Sensor " . $pin_sensor . ", solenoid " . $pin_solenoid . ", plant connected" . "\n";

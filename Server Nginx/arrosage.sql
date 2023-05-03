@@ -45,8 +45,11 @@ CREATE TABLE `Flowerpot` (
   `id_sensor` int(11) NOT NULL,
   `id_solenoid` int(11) NOT NULL,
   `mode` enum('real','model') NOT NULL DEFAULT 'real',
-  `is_irrigated` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `is_irrigated` tinyint(1) NOT NULL DEFAULT 1,
+  `volume` float NOT NULL,
+  `area` float NOT NULL,
+  `rest_moisture` float NOT NULL DEFAULT 0
+) ;
 
 -- --------------------------------------------------------
 
@@ -118,7 +121,8 @@ CREATE TABLE `Sensor` (
   `id_sensor` int(11) NOT NULL,
   `pin_sensor` int(11) NOT NULL,
   `max_humidity` int(11) NOT NULL,
-  `min_humidity` int(11) NOT NULL
+  `min_humidity` int(11) NOT NULL,
+  `isTrusted` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -145,6 +149,39 @@ CREATE TABLE `Solenoide` (
   `pin_solenoid` int(11) NOT NULL,
   `capacity` float NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `TemperatureData`
+--
+
+CREATE TABLE `TemperatureData` (
+  `id_category` int(11) NOT NULL,
+  `temperature` int(11) NOT NULL,
+  `water` float NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `TemperatureData`
+--
+
+INSERT INTO `TemperatureData` (`id_category`, `temperature`, `water`) VALUES
+(1, 10, 4.23);
+(1, 20, 8.46);
+(1, 30, 12.7);
+(1, 40, 16.93);
+(1, 50, 25.39);
+(2, 10, 35.71);
+(2, 20, 71.43);
+(2, 30, 107.14);
+(2, 40, 142.86);
+(2, 50, 214.29);
+(3, 10, 214.29);
+(3, 20, 428.57);
+(3, 30, 571.43);
+(3, 40, 714.29);
+(3, 50, 1142.86);
 
 --
 -- Indexes for dumped tables
@@ -204,6 +241,12 @@ ALTER TABLE `Session`
 ALTER TABLE `Solenoide`
   ADD PRIMARY KEY (`id_solenoid`),
   ADD KEY `fk_pin_solenoid` (`pin_solenoid`);
+
+--
+-- Indexes for table `TemperatureData`
+--
+ALTER TABLE `TemperatureData`
+  ADD KEY `fk_id_category_td` (`id_category`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -280,4 +323,10 @@ ALTER TABLE `Session`
 --
 ALTER TABLE `Solenoide`
   ADD CONSTRAINT `fk_pin_solenoid` FOREIGN KEY (`pin_solenoid`) REFERENCES `PinSolenoid` (`Number`);
+
+--
+-- Constraints for table `TemperatureData`
+--
+ALTER TABLE `TemperatureData`
+  ADD CONSTRAINT `fk_id_category_td` FOREIGN KEY (`id_category`) REFERENCES `Categories` (`id_category`);
 COMMIT;
