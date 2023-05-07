@@ -7,23 +7,6 @@
     <link href="style.css" rel="stylesheet" type="text/css">
 </head>
 
-<!-- sql connection -->
-<?php
-
-include '../vars.php';
-
-try {
-    $link = mysqli_connect("localhost", $login, $password, "arrosage");
-
-    if (!$link) {
-        throw new Exception('Failed');
-    }
-} catch (Exception $e) {
-    echo 'Wrong database username or password';
-    die;
-}
-?>
-
 <?php
 if (isset($_GET['dateFrom'])) {
     $dateFrom = $_GET['dateFrom'];
@@ -37,16 +20,7 @@ if (isset($_GET['logLevel'])) {
 ?>
 
 <body>
-    <ul class="navbar">
-        <li><a href="index.php">Home</a></li>
-        <li><a href="modify_plants.php">Modify plants</a></li>
-        <li><a href="manual_control.php">Manual control</a></li>
-        <li><a href="">Logs</a></li>
-    </ul>
-
-    <br>
-    <div class="line"></div>
-    <br>
+    <?php include 'utils/navbar.php'; ?>
 
     <form name="Filter" method="get">
         From:
