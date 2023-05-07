@@ -8,4 +8,3 @@
 2023-02-20 16:11:33 error test
 2023-03-10 13:43:13 info Sensor "1", solenoid "17", plant connected
 2023-03-10 15:56:00 info Plant desconnected
-2023-03-10 15:56:28 info Sensor "0", solenoid "15", plant connected

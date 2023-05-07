@@ -87,13 +87,7 @@ def wateringOne(relay_pin: int, duration: int) -> ():
     pump = LED(PIN_PUMP)
     pump.on()    
     led.on()
-    pump.off()
-    led.off()
-    time.sleep(duration)
-    pump.on()
-    led.on()
 
-# Watering all pots.
 # WARNING: it is not an error that the "on" function is first called to stop the current supply (in case it is supplied)
 #        - this is not a mistake!
 # The wiring diagram of the relay in our system is such that "on" works like "off" and vice versa
@@ -257,17 +251,22 @@ if __name__ == '__main__':
     list_pins = [PIN_SOL0, PIN_SOL1, PIN_SOL2, PIN_SOL3, PIN_PUMP]
 
    # calibration(list_pins, [3.4, 2,3], 5, "test_file.csv")
-   # buf = list()
+    buf = list()
    # print (takeDataFromAllSensors(buf))
    # testAllSensors(10, 5, "sensors_test_moist_soil.csv")
-
+    pots = list()
+    for i in range(0, MCP_pins_count):    
+        pots.append(MCP3008(i))
      
-
+    print(takeDataFromAllSensors(buf, pots))
     
    # wateringOne(PIN_SOL0, 7)
-    time.sleep(4)
+    #time.sleep(4)
    # wateringAll(list_pins, 7)
    
+    wateringOne(PIN_SOL0, 2)
+    wateringOne(PIN_SOL1, 2)
+    wateringOne(PIN_SOL2, 2)
     wateringOne(PIN_SOL3, 2)
 
 

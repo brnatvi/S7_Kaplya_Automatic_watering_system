@@ -1,3 +1,7 @@
 mode=auto
-maxIterations=15
+outdoor=1
+maxIterations=5
 logFile=/var/www/arrosage/logs.txt
+density=0.47
+waterKoeff=1.09
+absorbDur=60
