@@ -10,79 +10,22 @@
 <!-- sql connection -->
 <?php
 
-include '../vars.php';
+include 'utils/db_connection.php';
 
-try {
-    $link = mysqli_connect("localhost", $login, $password, "arrosage");
-
-    if (!$link) {
-        throw new Exception('Failed');
-    }
-} catch (Exception $e) {
-    echo 'Wrong database username or password';
-    die;
-}
-
-$sql_pants = "SELECT name, id_flowerpot, pin_sensor, pin_solenoid, mode, id_category, is_irrigated 
-    FROM Plant JOIN Flowerpot on Plant.id_plant=Flowerpot.id_plant
-                JOIN Solenoide on Flowerpot.id_solenoid=Solenoide.id_solenoid
-                JOIN Sensor on Flowerpot.id_sensor=Sensor.id_sensor";
-$result_plants = $link->query($sql_pants);
+include 'utils/db_queries.php';
 
 ?>
 
 <body>
 
-    <ul class="navbar">
-      <li><a href="">Home</a></li>
-      <li><a href="modify_plants.php">Modify plants</a></li>
-      <li><a href="manual_control.php">Manual control</a></li>
-      <li><a href="logs.php">Logs</a></li>
-    </ul>
-
-    <br><div class="line"></div>
+    <?php include 'utils/navbar.php'; ?>
 
     <!-- mode, TODO : change -->
-    <p><b>Current mode : Automatic</b></p>
+    <b>Current mode : Automatic</b>
     <div class="line"></div>
 
     <!-- table -->
-    <br>
-    <table id="table" border="0" cellspacing="0" cellpadding="4">
-        <tr>
-            <th>Plant</th>
-            <th>Flowerpot</th>
-            <th>Sensor</th>
-            <th>Solenoid</th>
-            <th>Mode</th>
-            <th>Category</th>
-            <th>Irrigated</th>
-        </tr>
-
-        <!-- adding plants from database -->
-        <?php
-        if ($result_plants->num_rows > 0) {
-            while ($row = $result_plants->fetch_assoc()) {
-                echo "<tr>";
-                echo "<th>" . $row["name"] . "</th>";
-                echo "<th>" . $row["id_flowerpot"] . "</th>";
-                echo "<th>" . $row["pin_sensor"] . "</th>";
-                echo "<th>" . $row["pin_solenoid"] . "</th>";
-                echo "<th>" . $row["mode"] . "</th>";
-                echo "<th>" . $row["id_category"] . "</th>";
-                echo "<th>" . $row["is_irrigated"] . "</th>";
-                echo "</tr>";
-            }
-        } else {
-            echo "<tr>";
-            echo "<th colspan=\"6\">List is empty</th>";
-            echo "</tr>";
-        }
-        ?>
-    </table>
-    </br>
-    <div class="line"></div>
-    </br>
+    <?php include 'utils/table.php'; ?>
 
     <table id="table" border="0" cellspacing="0" cellpadding="4">
         <tr>

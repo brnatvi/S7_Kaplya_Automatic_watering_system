@@ -9,93 +9,16 @@
 
 <!-- sql connection -->
 <?php
+include 'utils/db_connection.php';
 
-include '../vars.php';
-
-try {
-    $link = mysqli_connect("localhost", $login, $password, "arrosage");
-
-    if (!$link) {
-        throw new Exception('Failed');
-    }
-} catch (Exception $e) {
-    echo 'Wrong database username or password';
-    die;
-}
-
-$sql_pants = "SELECT name, id_flowerpot, pin_sensor, pin_solenoid, mode, id_category, is_irrigated 
-    FROM Plant JOIN Flowerpot on Plant.id_plant=Flowerpot.id_plant
-                JOIN Solenoide on Flowerpot.id_solenoid=Solenoide.id_solenoid
-                JOIN Sensor on Flowerpot.id_sensor=Sensor.id_sensor";
-$result_plants = $link->query($sql_pants);
-
-$sql_flowerpot = "SELECT id_flowerpot FROM Flowerpot";
-$result_flowerpot = $link->query($sql_flowerpot);
-
-$sql_categories = "SELECT * FROM Categories";
-$result_categories = $link->query($sql_categories);
-
-$sql_pin_sensors = "SELECT * FROM PinSensor 
-                    EXCEPT 
-                    SELECT pin_sensor from Flowerpot
-                    JOIN Sensor on Flowerpot.id_sensor=Sensor.id_sensor";
-$result_pin_sensors = $link->query($sql_pin_sensors);
-$result_pin_sensors2 = $link->query($sql_pin_sensors);
-
-$sql_pin_solenoid = "SELECT * FROM PinSolenoid 
-                        EXCEPT 
-                        SELECT pin_solenoid from Flowerpot
-                        JOIN Solenoide on Flowerpot.id_solenoid=Solenoide.id_solenoid";
-$result_pin_solenoid = $link->query($sql_pin_solenoid);
-$result_pin_solenoid2 = $link->query($sql_pin_solenoid);
+include 'utils/db_queries.php';
 
 ?>
 
 <body>
-    <ul class="navbar">
-        <li><a href="index.php">Home</a></li>
-        <li><a href="">Modify plants</a></li>
-        <li><a href="manual_control.php">Manual control</a></li>
-        <li><a href="logs.php">Logs</a></li>
-    </ul>
+    <?php include 'utils/navbar.php'; ?>
 
-    <br>
-    <div class="line"></div>
-
-    <!-- table -->
-    <br>
-    <table id="table" border="0" cellspacing="0" cellpadding="4">
-        <tr>
-            <th>Plant</th>
-            <th>Flowerpot</th>
-            <th>Sensor</th>
-            <th>Solenoid</th>
-            <th>Mode</th>
-            <th>Category</th>
-            <th>Irrigated</th>
-        </tr>
-
-        <!-- adding plants from database -->
-        <?php
-        if ($result_plants->num_rows > 0) {
-            while ($row = $result_plants->fetch_assoc()) {
-                echo "<tr>";
-                echo "<th>" . $row["name"] . "</th>";
-                echo "<th>" . $row["id_flowerpot"] . "</th>";
-                echo "<th>" . $row["pin_sensor"] . "</th>";
-                echo "<th>" . $row["pin_solenoid"] . "</th>";
-                echo "<th>" . $row["mode"] . "</th>";
-                echo "<th>" . $row["id_category"] . "</th>";
-                echo "<th>" . $row["is_irrigated"] . "</th>";
-                echo "</tr>";
-            }
-        } else {
-            echo "<tr>";
-            echo "<th colspan=\"6\">List is empty</th>";
-            echo "</tr>";
-        }
-        ?>
-    </table>
+    <?php include 'utils/table.php'; ?>
 
     <form method="post">
         <fieldset>
@@ -207,49 +130,76 @@ $result_pin_solenoid2 = $link->query($sql_pin_solenoid);
 </body>
 
 <?php
-if (array_key_exists('add', $_POST)) {
-    $name = "\"" . $_POST['name'] . "\"";
-    $id_category = "\"" . explode(' ', $_POST['id_category'], 2)[0] . "\"";
-    $pin_sensor = "\"" . $_POST['pin_sensor'] . "\"";
-    $min_humidity = "\"" . $_POST['min_humidity'] . "\"";
-    $max_humidity = "\"" . $_POST['max_humidity'] . "\"";
-    $pin_solenoid = "\"" . $_POST['pin_solenoid'] . "\"";
-    $capacity = "\"" . $_POST['capacity'] . "\"";
-    $volume = "\"" . floatval($_POST['volume'])*1000 . "\"";
-    $diameter = floatval($_POST['diameter']);
-    $area = "\"" . (1 / 4 * M_PI * $diameter * $diameter) . "\"";
-    $sql = "INSERT INTO Sensor (pin_sensor, min_humidity, max_humidity) VALUES ($pin_sensor, $min_humidity,$max_humidity)";
-    $id_sensor = sql_query($sql);
-    $sql = "INSERT INTO Solenoide (pin_solenoid, capacity) VALUES ($pin_solenoid, $capacity)";
-    $id_solenoid = sql_query($sql);
-    $sql = "INSERT INTO Plant (name, id_category) VALUES ($name, $id_category)";
-    $id_plant = sql_query($sql);
-    $sql = "INSERT INTO Flowerpot (id_plant, id_sensor, id_solenoid, volume, area) VALUES ($id_plant, $id_sensor, $id_solenoid, $volume, $area)";
-    sql_query($sql);
 
-    $txt = "Sensor " . $pin_sensor . ", solenoid " . $pin_solenoid . ", plant connected" . "\n";
-    writeLog($txt);
+include 'utils/db_connection.php';
+
+if (array_key_exists('add', $_POST)) {
+
+    $link->begin_transaction();
+    try {
+        $name = "\"" . $_POST['name'] . "\"";
+        $id_category = "\"" . explode(' ', $_POST['id_category'], 2)[0] . "\"";
+        $pin_sensor = "\"" . $_POST['pin_sensor'] . "\"";
+        $min_humidity = "\"" . $_POST['min_humidity'] . "\"";
+        $max_humidity = "\"" . $_POST['max_humidity'] . "\"";
+        $pin_solenoid = "\"" . $_POST['pin_solenoid'] . "\"";
+        $capacity = "\"" . $_POST['capacity'] . "\"";
+        $volume = "\"" . floatval($_POST['volume']) * 1000 . "\"";
+        $diameter = floatval($_POST['diameter']);
+        $area = "\"" . (1 / 4 * M_PI * $diameter * $diameter) . "\"";
+        $sql = "INSERT INTO Sensor (pin_sensor, min_humidity, max_humidity) VALUES ($pin_sensor, $min_humidity,$max_humidity)";
+        $id_sensor = sql_query($sql, $link);
+        $sql = "INSERT INTO Solenoide (pin_solenoid, capacity) VALUES ($pin_solenoid, $capacity)";
+        $id_solenoid = sql_query($sql, $link);
+        $sql = "INSERT INTO Plant (name, id_category) VALUES ($name, $id_category)";
+        $id_plant = sql_query($sql, $link);
+        $sql = "INSERT INTO Flowerpot (id_plant, id_sensor, id_solenoid, volume, area) VALUES ($id_plant, $id_sensor, $id_solenoid, $volume, $area)";
+        sql_query($sql, $link);
+
+        $txt = "Sensor " . $pin_sensor . ", solenoid " . $pin_solenoid . ", plant connected" . "\n";
+        writeLog($txt);
+
+        $link->commit();
+        
+        header("Refresh:0");
+    } catch (Exception $e) {
+      $link->rollback();
+      echo "Error: " . $e->getMessage();
+    }
+
+    $link->close();
 } else if (array_key_exists('delete', $_POST)) {
     $id_flowerpot = $_POST['id_flowerpot'];
     $sql_pants = "SELECT id_plant, id_sensor, id_solenoid FROM Flowerpot WHERE id_flowerpot=$id_flowerpot";
     $result_plants = $link->query($sql_pants);
     if ($result_plants->num_rows > 0) {
-        $row = $result_plants->fetch_assoc();
-        $id_plant = $row["id_plant"];
-        $id_sensor = $row["id_sensor"];
-        $id_solenoid = $row["id_solenoid"];
-        $sql = "DELETE FROM Flowerpot WHERE id_flowerpot = $id_flowerpot";
-        sql_query($sql);
-        $sql = "DELETE FROM Plant WHERE id_plant = $id_plant";
-        sql_query($sql);
-        $sql = "DELETE FROM Sensor WHERE id_sensor = $id_sensor";
-        sql_query($sql);
-        $sql = "DELETE FROM Solenoide WHERE id_solenoid = $id_solenoid";
-        sql_query($sql);
+        $link->begin_transaction();
+        try {
+            $row = $result_plants->fetch_assoc();
+            $id_plant = $row["id_plant"];
+            $id_sensor = $row["id_sensor"];
+            $id_solenoid = $row["id_solenoid"];
+            $sql = "DELETE FROM Flowerpot WHERE id_flowerpot = $id_flowerpot";
+            sql_query($sql, $link);
+            $sql = "DELETE FROM Plant WHERE id_plant = $id_plant";
+            sql_query($sql, $link);
+            $sql = "DELETE FROM Sensor WHERE id_sensor = $id_sensor";
+            sql_query($sql, $link);
+            $sql = "DELETE FROM Solenoide WHERE id_solenoid = $id_solenoid";
+            sql_query($sql, $link);
 
-        //$txt = "Sensor " . $pin_sensor . ", solenoid " . $pin_solenoid . ", plant desconnected" . "\n";
-        $txt = "Plant desconnected" . "\n";
-        writeLog($txt);
+            $txt = "Plant desconnected" . "\n";
+            writeLog($txt);
+
+            $link->commit();
+
+            header("Refresh:0");
+        } catch (Exception $e) {
+            $link->rollback();
+            echo "Error: " . $e->getMessage();
+        }
+      
+        $link->close();
     }
 } else if (array_key_exists('testSensor', $_POST)) {
     $command = "python3 test.py testSensor " . $_POST['pin_sensor'];
@@ -271,16 +221,9 @@ if (array_key_exists('add', $_POST)) {
     //header("Refresh: 0");
 }
 
-function sql_query($sql)
+function sql_query($sql, $link)
 {
-    $link = mysqli_connect("localhost", "admin", "admin", "arrosage");
-
-    if ($link->connect_error) {
-        die("Connection failed : " . $link->connect_error . "</br></br>");
-    }
-
     if ($link->query($sql) === TRUE) {
-        header("Refresh:0");
         $last_id = $link->insert_id;
     } else {
         echo "Error : " . $sql . "<br>" . $link->error;
