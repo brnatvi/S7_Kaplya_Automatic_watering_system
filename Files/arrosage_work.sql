@@ -331,4 +331,31 @@ ALTER TABLE `Solenoide`
 ALTER TABLE `TemperatureData`
   ADD CONSTRAINT `fk_id_category_td` FOREIGN KEY (`id_category`) REFERENCES `Categories` (`id_category`);
 
+
+
+INSERT INTO `Sensor` (`pin_sensor`, `max_humidity`, `min_humidity`) VALUES
+(0,693,290),
+(1,628,293),
+(2,810,375),
+(3,695,321);
+
+INSERT INTO `Solenoide` (`pin_solenoid`, `capacity`) VALUES
+(17,4.6),
+(27,3.9),
+(22,3.6),
+(14,4.2);
+
+INSERT INTO `Plant` (`name`, `id_category`) VALUES
+('Rose White',3),
+('Begonia',2),
+('Cactus',1),
+('Rose White',3);
+
+
+INSERT INTO `Flowerpot` (`id_plant`, `id_sensor`, `id_solenoid`, `volume`, `area`) VALUES
+(1,1,1,6000,20),
+(2,2,2,800,12),
+(3,3,3,1200,14),
+(4,4,4,4800,20);
+
 COMMIT;
