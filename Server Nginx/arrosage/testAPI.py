@@ -1,7 +1,7 @@
 import json
 import requests
 
-response = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,relativehumidity_2m,rain,showers&forecast_days=1').text
+response = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,relativehumidity_2m,rain,showers&past_days=1').text
 
 response_info = json.loads(response)
 hourly = response_info['hourly']
@@ -11,7 +11,7 @@ humidity = hourly['relativehumidity_2m']
 rain = hourly['rain']
 showers = hourly['showers']
 
-date = '2023-05-03'
+date = '2023-05-07'
 time = '10:00'
 datetime = date + 'T' + time
 
