@@ -335,10 +335,41 @@ class DeviceControl:
     
     def sensorsVerification():
         print("TODO check if sensors work correctly")
+
+
+    def takeWheatherStatistics(date):
         
-    def takeWheatherStatistics():
-        print("TODO")
+        try:
+            response = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,relativehumidity_2m,precipitation&start_date=' + date + '&end_date=' + date).text
+            response_info = json.loads(response)
+            hourly = response_info['hourly']
+        except Exeption as e:
+            print("TODO if gets bad response")  
+
+        temperatures = hourly['temperature_2m']
+        humidities = hourly['relativehumidity_2m']
+        precipitations = hourly['precipitation']
+
+        def weighted_average(list):
+            n_measurements = len(list)
+            durations = [1] * n_measurements
     
+            # calculate the total duration for the day
+            total_duration = sum(durations)
+    
+            # calculate the sum of the products of temperatures and durations
+            weighted_sum = sum([temp * duration for temp, duration in zip(list, durations)])
+    
+            # calculate the weighted average temperature
+            weighted_average = weighted_sum / total_duration
+    
+            return weighted_average 
+
+        average_temp = weighted_average(temperatures)
+        average_humidity = weighted_average(humidities)
+        average_precipitation = weighted_average(precipitations)
+
+        return (average_temp, average_humidity, average_precipitation)
     
 
     def autoMode(self):    
@@ -354,10 +385,12 @@ class DeviceControl:
         realWatered = []
         attempt = 1
 
-        # TODO take YESTERDAY data from Weather API
-        temp = 23                   
-        hum = 0
-        rain = 0
+        # TODO use YESTERDAY data
+        date = '2023-05-07'
+        res = self.takeWheatherStatistics(date)
+        temp = res[0]
+        hum = res[1]
+        rain = res[2]
 
         # watering by model first
         list_pins = []

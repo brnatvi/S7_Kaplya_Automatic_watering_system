@@ -3,15 +3,13 @@ import requests
 
 date = '2023-05-07'
 
-response = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,relativehumidity_2m,rain,showers&start_date=' + date + '&end_date=' + date).text
+response = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,relativehumidity_2m,precipitation&start_date=' + date + '&end_date=' + date).text
 
 response_info = json.loads(response)
 hourly = response_info['hourly']
-times = hourly['time']
 temperatures = hourly['temperature_2m']
 humidities = hourly['relativehumidity_2m']
-rains = hourly['rain']
-showers = hourly['showers']
+precipitations = hourly['precipitation']
 
 def weighted_average(list):
         n_measurements = len(list)
@@ -30,8 +28,7 @@ def weighted_average(list):
 
 average_temp = weighted_average(temperatures)
 average_humidity = weighted_average(humidities)
-average_rain = weighted_average(rains)
-average_shower = weighted_average(showers)
+average_precipitation = weighted_average(precipitations)
 
-print("For %s : average temp = %s; humidity = %s; rain = %s; showers = %s." 
-        % (date, average_temp, average_humidity, average_rain, average_shower))
+print("For %s : average temp = %s; humidity = %s; precipitation = %s." 
+        % (date, average_temp, average_humidity, average_precipitation))
