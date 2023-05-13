@@ -356,8 +356,8 @@ class DeviceControl:
 
         # TODO take YESTERDAY data from Weather API
         temp = 23                   
-        hum = 0
-        rain = 0
+        hum = 10
+        rain = 2
 
         # watering by model first
         list_pins = []
