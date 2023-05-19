@@ -5,11 +5,14 @@ import os
 import time
 from time import sleep
 from datetime import datetime
+from datetime import timedelta
+from datetime import date
 from threading import Thread
 import csv
 import json
 import requests
 import mariadb
+import math
 
 
 PIN_PUMP = 24
@@ -22,7 +25,7 @@ class Sensor:
     min_val: int
     isTrusted: bool
     
-    def __init__(self, id, pin, min, max, isTrusted):
+    def __init__(self, id, pin, max, min, isTrusted):
         self.id = id
         self.pin = pin
         self.min_val = min
@@ -34,8 +37,13 @@ class Sensor:
 
     
     def desactivateSensor(self, cur, connection):
-        self.sensor.isTrusted = False
-        cur.execute("UPDATE Sensor SET is_working = False WHERE id_sensor = %s", (self.pin, )) 
+        self.isTrusted = False
+        cur.execute("UPDATE Sensor SET isTrusted = False WHERE id_sensor = %s", (self.pin, )) 
+        connection.commit()
+        
+    def activateSensor(self, cur, connection):
+        self.isTrusted = True
+        cur.execute("UPDATE Sensor SET isTrusted = True WHERE id_sensor = %s", (self.pin, )) 
         connection.commit()
 
     ''' Take data from MCP pin specified '''
@@ -120,6 +128,11 @@ class Pot:
         self.mode = 'model'
         cur.execute("UPDATE Flowerpot SET mode = 'model' WHERE id_flowerpot = %s", (self.id, ))
         connection.commit()
+        
+    def activateSensorMode(self, cur, connection):
+        self.mode = 'real'
+        cur.execute("UPDATE Flowerpot SET mode = 'real' WHERE id_flowerpot = %s", (self.id, ))
+        connection.commit()
 
     def takeNeedWaterByModel(self, temp, hum, rain, cur, connection):
         refers = [10, 20, 30, 40, 50]
@@ -148,23 +161,29 @@ class Pot:
         else:
             kPot = 1
         
-        print('need for this temperature = ' + str(needForTemp))
+        print('need for this temperature = ' + str(needForTemp) + '  pot koeff = ' + str(kPot))
         
-        volumeRain = self.square * rain                                     #TODO werify that rain in cm !!!
+        # calculate volume of precipitations added yesterday
+        volumeRain = self.square * rain * 10    # API send rain in mm -> convert to cm
         
-        diff = needForTemp - (volumeRain + self.rest_moisture)
-
-        need = diff * (1 - hum/100) * kPot
-      #  if (need <= 0):       #rain + rest exceed
-      #      cur.execute("UPDATE Flowerpot SET rest_moisture = %s WHERE id_flowerpot = %s", (need, self.id))
-      #      connection.commit()
-      #      return 0    
-
-        return int(need)
+        need = 0
+        if (volumeRain + self.rest_moisture >= needForTemp * kPot):       # if precipitations were > needForTemp  ->  save in BD all which wasn't consumed
+                        
+            rest = volumeRain + self.rest_moisture - needForTemp * kPot
+            
+            # save the rest in DB
+            cur.execute("UPDATE Flowerpot SET rest_moisture = %s WHERE id_flowerpot = %s;", (rest, self.id, ))
+            connection.commit()
+            
+            return need
+        
+        else:
+            need = needForTemp * kPot - volumeRain - self.rest_moisture           
+            return int(need)
 
 
     def takeNeedWaterBySensors(self, persents):        
-        # comfornt watering level = mid ( upper_limit, lower_limit )
+        # comfort watering level = mid ( upper_limit, lower_limit )
         needWaterMass = int(self.mass_water_max * (self.plant.category.upper_limit + self.plant.category.lower_limit)/200) # g
 
         print("mass of water for 100% humidity " + str(self.mass_water_max))
@@ -183,6 +202,7 @@ class DeviceControl:
     water_koeff: float
     absorption_duration: int
     outdoor: int
+    nbWatered: int
 
     def __init__(self):
         self.auto_mode    = ''
@@ -191,7 +211,8 @@ class DeviceControl:
         self.density_soil = -1
         self.water_koeff  = -1
         self.absorption_duration = -1
-        self.list_pots = []        
+        self.list_pots = []
+        self.nbWatered = 0
         # read parameters from config
         try:
             with open('config.txt', mode='r') as config:
@@ -250,10 +271,10 @@ class DeviceControl:
                 host="localhost",
                 database="arrosage"
             )
+            return conn
         except mariadb.Error as e:
-            self.logging('error', 'Error connecting to MariaDB Platform: ' + e)        
-        return conn
-        
+            self.logging('error', 'Error connecting to MariaDB Platform: ' + str(e))        
+                
         
     ''' Create all classes with data from DB'''   
     def fillCurrentObjects(self, cur):        
@@ -323,22 +344,135 @@ class DeviceControl:
         for t in threads:
             t.join()
     
-       
+        
+   # def isInList(self, liste, el):
+   #     try:
+    #        liste.index(el)
+    #    except Exception as e:
+    #        return False        
+    #    return True
+    
+    ''' Ask sensors 2 times per minute during 30 mimutes, and calculate dispersion'''
+    def sensorsVerification(self, cur, connection):
+        dataLists = list()
+        pots = list()
+        avgList = list()
+        dispList = list()
+        
+        for pot in self.list_pots:            
+            if (pot.isIrrigated):
+                pots.append(pot)
+                newList = list()
+                dataLists.append(newList)
+                self.nbWatered += 1
+        
+        # collect row data
+        counter = 5
+        #counter = 60             TODO change
+        while(counter):
+            print('iter : ' + str(counter))
+            
+            for i in range(self.nbWatered):
+                dataLists[i].append(pots[i].sensor.takeDataFromSensor())
+            counter -= 1            
+            time.sleep(10)
+           # time.sleep(30)       TODO change
+           
+        
+        # calculate dispertion
+        for i in range(self.nbWatered):
+            avg = sum(dataLists[i]) / len(dataLists[i])
+            
+            if (1023 == avg):
+                self.logging('debug', 'Connection to sensor ' + str(pots[i].sensor.pin) + ' is broken. Sensor is desactivated.')
+                pots[i].sensor.desactivateSensor(cur, connection)
+                pots[i].activateModelMode(cur, connection)
+                
+            summ = 0
+            for val in dataLists[i]:
+                summ += math.pow((val - avg), 2)
+                
+            dispList.append( math.sqrt(summ / len(dataLists[i])) )
+            avgList.append(avg)
+            
+        # analyse results
+        for i in range(self.nbWatered):
+            # normal deviation is less than 5% of the sensor's range
+            #  and values doesn't out of sensor's range more then 10%
+            onePercentEq = (pots[i].sensor.max_val - pots[i].sensor.min_val)/100
+            if (dispList[i] > (5 * onePercentEq)) or (min(dataLists[i]) < (pots[i].sensor.min_val - 10 * onePercentEq)) or (max(dataLists[i]) > (pots[i].sensor.max_val + 10 * onePercentEq)) :                
+                self.logging('debug', 'Sensor' + str(pots[i].sensor.pin) + ' is unstable and will be desactivated.')
+                pots[i].sensor.desactivateSensor(cur, connection)
+                pots[i].activateModelMode(cur, connection)
+        
+        return avgList
 
-        
-    def isInList(self, liste, el):
-        try:
-            liste.index(el)
-        except Exeption as e:
-            return False        
-        return True
+
+    def takeWheatherStatistics(self):
+        count = 5      # 5 attempts to obtain weather forecast 
+        today = date.today()
+        yesterday = today - timedelta(days = 1)
+        req = 'https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,relativehumidity_2m,precipitation&start_date=' + str(yesterday) + '&end_date=' + str(yesterday)
+        while (count):
+            try:            
+                response = requests.get(req).text
+                response_info = json.loads(response)
+                hourly = response_info['hourly']
+            
+                temperatures = hourly['temperature_2m']
+                print('temperatures : ' + str(temperatures))
+                humidities = hourly['relativehumidity_2m']
+                print('humidities : ' + str(humidities))
+                precipitations = hourly['precipitation']
+                print('precipitations : ' + str(precipitations))
+
+                def weighted_average(list):
+                    n_measurements = len(list)
+                    durations = [1] * n_measurements
     
-    def sensorsVerification():
-        print("TODO check if sensors work correctly")
-        
-    def takeWheatherStatistics():
-        print("TODO")
+                    # calculate the total duration for the day
+                    total_duration = sum(durations)
     
+                    # calculate the sum of the products of temperatures and durations
+                    weighted_sum = sum([temp * duration for temp, duration in zip(list, durations)])
+    
+                    # calculate the weighted average temperature
+                    weighted_average = weighted_sum / total_duration
+    
+                    return weighted_average 
+
+                average_temp = weighted_average(temperatures)
+                print('average_temp          = ' + str(average_temp))
+                average_humidity = weighted_average(humidities)
+                print('average_humidity      = ' + str(average_humidity))
+                sum_precipitation = sum(precipitations)
+                print('sum_precipitation     = ' + str(sum_precipitation))
+
+                return (average_temp, average_humidity, sum_precipitation)
+            
+            except Exception as e:
+                count -= 1
+                time.sleep(30)
+                self.logging('error', 'Weather forecast error : ' + str(e))  
+        self.logging('error', 'Weather forecast error : ' + str(e)) 
+        return None
+    
+    
+    def saveModelAndReal(self, data):
+        path_dir = os.path.abspath(os.path.join('..'))
+        path_dir = os.path.join(path_dir, 'Data_To_Teach')
+        if (not os.path.exists(path_dir)):
+            os.mkdir(path_dir)
+        path = os.path.join(path_dir, 'data.txt')
+    
+        with open(path, mode='a') as csvfile:            
+            writer = csv.writer(csvfile, delimiter = ",", lineterminator="\r")
+                       
+            for k,v in data.items():               
+                writer.writerow([k.sensor.id, v[0], v[1]])
+                
+            writer.writerow([])
+            csvfile.close()
     
 
     def autoMode(self):    
@@ -350,59 +484,82 @@ class DeviceControl:
         #2) data from DB -> fill classes    
         self.fillCurrentObjects(cur)
         
-        modelWatered = []    
-        realWatered = []
-        attempt = 1
+        #3) Check sensors      
+        self.sensorsVerification(cur, connection)
 
-        # TODO take YESTERDAY data from Weather API
-        temp = 23                   
-        hum = 10
-        rain = 2
+        #4) take YESTERDAY weather forecast if outdoor
+        temp = 20
+        hum  = 40
+        rain = 0
+        
+        if self.outdoor:            
+            res = self.takeWheatherStatistics()
+            if ( res != None):
+                temp = res[0]
+                hum = res[1]
+                rain = res[2]
+            else:
+                print('TODO user email alert + arrosage by old data')
 
-        # watering by model first
-        list_pins = []
+        #5) Calculate model for all pots + watering those that work according to the model
+        listPins = []
+        data = dict()
+        attempt = 1  
+        
         for pot in self.list_pots:
                 if (pot.isIrrigated):
+                
+                    waterNeedModel = pot.takeNeedWaterByModel(temp, hum, rain, cur, connection)
+                    data[pot] = [waterNeedModel]
+                    
                     if (not pot.sensor.isTrusted):
-                        duration = pot.takeNeedWaterByModel(temp, hum, rain, cur, connection)                        
-                        list_pins.append([pot.sol.pin, duration])    
+                        duration = int(waterNeedModel/pot.sol.debit)
+                        listPins.append([pot.sol.pin, duration])    
                         self.makeReport(pot.sensor.id, pot.sol.id, pot.mode, attempt, None, pot.plant.category.id, duration)                    
-        self.wateringAll(list_pins)
-        modelWatered.clear()
         
-        # watering by sensors
+        self.wateringAll(listPins)
+        listPins.clear()        
+        
+        modelWatered = []    
+        realWatered = []        
+       
+        
+        #6) Watering by sensors
         while (True):                   
             for pot in self.list_pots:
                 if (pot.isIrrigated):
                     if (pot.sensor.isTrusted):
-                        value = pot.sensor.takeDataFromSensor()
+                        value = pot.sensor.takeDataFromSensor()                        
                         print('value from sensor : ' + str(value))
                     
-                        if ( value == 1023 ):
+                        if ( 1023 == value ):
                             self.logging('debug', 'Connection to sensor ' + str(pot.sensor.pin) + ' is broken.')
                         
                             pot.sensor.desactivateSensor(cur, connection)                        
                             pot.activateModelMode(cur, connection)
                             
-                            levelModel = pot.takeNeedWaterByModel(temp, hum, rain, cur, connection)
-                            duration = 0 if (levelModel <= 0) else levelModel/pot.sol.debit
+                            waterNeedModel = pot.takeNeedWaterByModel(temp, hum, rain, cur, connection)
+                            data[pot][0] = waterNeedModel
+                            duration = int( waterNeedModel/pot.sol.debit )
                             
                             modelWatered.append((pot, attempt, None, duration))
                      
                         else:
-                            persents = 100*(value - pot.sensor.min_val)/(pot.sensor.max_val - pot.sensor.min_val)
-                            persents = 0 if (persents <= 0) else int(persents)
-                            print(str(persents) + '%')
+
                             
-                            levelReal = pot.takeNeedWaterBySensors(persents)
-                            print('water need by real = ' + str(levelReal))
+                            persents = 100 - 100*(value - pot.sensor.min_val)/(pot.sensor.max_val - pot.sensor.min_val)
+                            persents = 0 if (persents <= 0) else int(persents)
+                            print(str(persents) + '%')                           
+                            
+                            waterNeedSensors = pot.takeNeedWaterBySensors(persents)
+                            print('water need by real  = ' + str(waterNeedSensors))                            
+                            print('water need by model = ' + str(data[pot][0]))
+                            if (1 == attempt):
+                                data[pot].append(waterNeedSensors)
 
-                            levelModel = pot.takeNeedWaterByModel(temp, hum, rain, cur, connection)
-                            print('water need by model = ' + str(levelModel))
+                            duration = int( 0 if (waterNeedSensors <= 0) else waterNeedSensors/pot.sol.debit )
 
-                            duration = 0 if (levelReal <= 0) else levelReal/pot.sol.debit
-
-                            realWatered.append((pot, attempt, int(persents), int(duration)))
+                            realWatered.append((pot, attempt, int(persents), duration))
                             
                             print('==================================')   
 
@@ -413,7 +570,7 @@ class DeviceControl:
             print('nb new Broken Sensors :' + str(nbModel))
             
             if (nbReal == 0) and (nbModel == 0):   # all plants watered, dont need working next 24h
-                self.logging('info', 'watering completed by ' + str(attempt - 1) + ' attempt(s), no errors')
+                self.logging('info', 'Watering completed by ' + str(attempt - 1) + ' attempt(s), no errors')
                 cur.close()
                 connection.close()
                 return
@@ -421,19 +578,19 @@ class DeviceControl:
             # arrosage
             else:
                 if (attempt > self.max_iter):
-                    self.logging('error', 'the number of attempts has been exceeded, but the data on the need for watering continues to be received')
+                    self.logging('error', 'The number of attempts has been exceeded, but the data on the need for watering continues to be received')
                     cur.close()
                     connection.close()
                     return
                     
-                list_pins = []
+                listPins = []
                 for item in realWatered:
                     p        = item[0]
                     attempt  = item[1]
                     persHum  = item[2]  # for report
-                    duration = item[3]  # duration now
+                    duration = item[3]  # duration
 
-                    list_pins.append([p.sol.pin, duration])
+                    listPins.append([p.sol.pin, duration])
                     
                     self.makeReport(p.sensor.id, p.sol.id, p.mode, attempt, persHum, p.plant.category.id, duration)
                 
@@ -441,18 +598,25 @@ class DeviceControl:
                     p        = item[0]
                     attempt  = item[1]
                     persHum  = item[2]  # for report
-                    duration = item[3]  # duration now
+                    duration = item[3]  # duration
                     
-                    list_pins.append([p.sol.pin, duration])
+                    listPins.append([p.sol.pin, duration])
     
                     self.makeReport(p.sensor.id, p.sol.id, p.mode, attempt, persHum, p.plant.category.id, duration)
                     
-                self.wateringAll(list_pins)
+                self.wateringAll(listPins)
     
+                        
+            if (1 == attempt):
+                self.saveModelAndReal(data)
+                
             attempt += 1
             realWatered.clear()
             modelWatered.clear()
-            #time.sleep(self.absorption_duration)
+            listPins.clear()
+            
+            
+            #time.sleep(self.absorption_duration)       TODO change
             time.sleep(10)
        
         
@@ -461,11 +625,7 @@ def main():
     dc = DeviceControl()  
     if (dc.auto_mode == 'auto'):
         dc.autoMode()
-        time.sleep(60*60)
-        sensorsVerification()
-        
-    else:
-        print('TODO  what we do if manual mode ?')
+    
 
 
     
