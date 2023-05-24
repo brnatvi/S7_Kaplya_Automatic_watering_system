@@ -300,8 +300,19 @@ class DeviceControl:
             newSol = Solenoid(rez[0], rez[1], rez[2])
             
             self.list_pots.append( Pot(pot[0], newSensor, newSol, newPlant, pot[4], pot[5], pot[6], pot[7], self.density_soil, self.water_koeff, pot[8]))
-            
-    
+          
+          
+    '''Take data from each of MCP's pins specified'''
+    def takeDataFromAllSensors(self, buffer, list_pins):
+        length = len(list_pins)
+        try:
+            for i in range(0, length):
+                buffer.append(list_pins[i].raw_value)
+            return buffer
+        except Exception as error:
+            self.logging('error', 'Take row data from sensors failure: ' + str(error)) 
+
+
     
     '''Watering one pot '''
     ''' WARNING: it is not an error that the "on" function is first called to stop the current supply (in case it is supplied)
@@ -391,8 +402,10 @@ class DeviceControl:
             summ = 0
             for val in dataLists[i]:
                 summ += math.pow((val - avg), 2)
-                
-            dispList.append( math.sqrt(summ / len(dataLists[i])) )
+            
+            ecartType = math.sqrt(summ / len(dataLists[i]))
+            print('ecart type = ' + str(ecartType))
+            dispList.append( ecartType )
             avgList.append(avg)
             
         # analyse results
